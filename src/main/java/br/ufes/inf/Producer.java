@@ -37,7 +37,7 @@ public class Producer {
 
             List<EventoFutebol> eventos = mapper.convertValue(dataNode, new TypeReference<List<EventoFutebol>>() {});
 
-            int i = 0;
+//            int i = 0;
             for (EventoFutebol evento : eventos) {
 
                 ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getFrom().getId(), evento);
@@ -51,7 +51,8 @@ public class Producer {
                         exception.printStackTrace();
                     }
                 });
-                if (i++ == 2) break;
+
+                Thread.sleep(1000);
             }
             producer.flush();
 
