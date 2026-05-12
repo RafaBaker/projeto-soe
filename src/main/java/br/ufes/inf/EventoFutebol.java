@@ -1,0 +1,89 @@
+package br.ufes.inf;
+
+import java.util.List;
+
+public class EventoFutebol {
+    private int index;
+    private Item team;
+    private List<Item> subtypes;
+    private Location start;
+    private Location end;
+    private int period;
+    private Item from;
+    private Item to;
+
+    public EventoFutebol(int index, Item team, List<Item> subtypes, Location start, Location end, int period, Item from, Item to) {
+        this.index = index;
+        this.team = team;
+        this.subtypes = subtypes;
+        this.start = start;
+        this.end = end;
+        this.period = period;
+        this.from = from;
+        this.to = to;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+    public Item getTeam() {
+        return team;
+    }
+
+    public void setTeam(Item team) {
+        this.team = team;
+    }
+
+    public List<Item> getSubtypes() {
+        return subtypes;
+    }
+
+    public void setSubtypes(List<Item> subtypes) {
+        this.subtypes = subtypes;
+    }
+
+    public Location getStart() {
+        return start;
+    }
+
+    public void setStart(Location start) {
+        this.start = start;
+    }
+
+    public Location getEnd() {
+        return end;
+    }
+
+    public void setEnd(Location end) {
+        this.end = end;
+    }
+
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
+    }
+
+    public Item getFrom() {
+        return from;
+    }
+
+    public void setFrom(Item from) {
+        this.from = from;
+    }
+
+    public Item getTo() {
+        return to;
+    }
+
+    public void setTo(Item to) {
+        this.to = to;
+    }
+}
