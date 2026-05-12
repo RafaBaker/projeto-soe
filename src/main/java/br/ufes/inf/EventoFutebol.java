@@ -8,6 +8,7 @@ import java.util.List;
 public class EventoFutebol {
     private int index;
     private Item team;
+    private Item type;
     private List<Item> subtypes;
     private Location start;
     private Location end;
@@ -15,9 +16,10 @@ public class EventoFutebol {
     private Item from;
     private Item to;
 
-    public EventoFutebol(int index, Item team, List<Item> subtypes, Location start, Location end, int period, Item from, Item to) {
+    public EventoFutebol(int index, Item team, Item type, List<Item> subtypes, Location start, Location end, int period, Item from, Item to) {
         this.index = index;
         this.team = team;
+        this.type = type;
         this.subtypes = subtypes;
         this.start = start;
         this.end = end;
@@ -42,6 +44,14 @@ public class EventoFutebol {
 
     public void setTeam(Item team) {
         this.team = team;
+    }
+
+    public Item getType() {
+        return type;
+    }
+
+    public void setType(Item type) {
+        this.type = type;
     }
 
     public List<Item> getSubtypes() {
@@ -90,6 +100,13 @@ public class EventoFutebol {
 
     public void setTo(Item to) {
         this.to = to;
+    }
+
+    public void imprimeEvento() {
+        switch (this.getType().getName()) {
+            case "PASS":
+                System.out.printf("[%.2f] Jogador %s tocou a bola para %s\n", this.getEnd().getTime() + (this.getPeriod()*45), this.getFrom().getName(), this.getTo().getName());
+        }
     }
 
     @Override

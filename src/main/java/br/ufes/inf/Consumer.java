@@ -31,9 +31,11 @@ public class Consumer {
                     EventoFutebol eventoFutebol = record.value();
                     lista.add(eventoFutebol);
 
-                    System.out.println("Received: " + eventoFutebol +
-                            " | partition= " + record.partition() +
-                            " | offset= " + record.offset());
+                    eventoFutebol.imprimeEvento();
+
+//                    System.out.println("Received: " + eventoFutebol +
+//                            " | partition= " + record.partition() +
+//                            " | offset= " + record.offset());
                 }
 
             }
@@ -44,7 +46,7 @@ public class Consumer {
 
     private static KafkaConsumer<String, EventoFutebol> getStringEventoFutebolKafkaConsumer() {
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "match-group");
 
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
