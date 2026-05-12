@@ -1,5 +1,7 @@
 package br.ufes.inf;
 
+import java.util.Locale;
+
 public class Location {
     private Integer frame;
     private Double time;
@@ -12,6 +14,8 @@ public class Location {
         this.x = x;
         this.y = y;
     }
+
+    public Location () {}
 
     public Integer getFrame() {
         return frame;
@@ -43,5 +47,15 @@ public class Location {
 
     public void setY(Double y) {
         this.y = y;
+    }
+
+    @Override
+    public String toString() {
+        return "Location{" +
+                "frame=" + frame +
+                ", time=" + time +
+                ", x=" + x +
+                ", y=" + y +
+                '}';
     }
 }
