@@ -1,7 +1,10 @@
 package br.ufes.inf;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class EventoFutebol {
     private int index;
     private Item team;
@@ -22,6 +25,8 @@ public class EventoFutebol {
         this.from = from;
         this.to = to;
     }
+
+    public EventoFutebol() {}
 
     public int getIndex() {
         return index;
@@ -85,5 +90,19 @@ public class EventoFutebol {
 
     public void setTo(Item to) {
         this.to = to;
+    }
+
+    @Override
+    public String toString() {
+        return "EventoFutebol{" +
+                "index=" + index +
+                ", team=" + team +
+                ", subtypes=" + subtypes +
+                ", start=" + start +
+                ", end=" + end +
+                ", period=" + period +
+                ", from=" + from +
+                ", to=" + to +
+                '}';
     }
 }
