@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.io.File;
@@ -38,10 +39,21 @@ public class Producer {
 
             int i = 0;
             for (EventoFutebol evento : eventos) {
-                System.out.println(evento);
-                if (i++ == 20) break;
-            }
 
+                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getFrom().getId(), evento);
+
+                producer.send(record, (metadata, exception) -> {
+                    if (exception == null) {
+                        System.out.println("Enviando EventoFutebol..." +  evento +
+                                            "| partition=" + metadata.partition() +
+                                            "| offset=" + metadata.offset());
+                    } else {
+                        exception.printStackTrace();
+                    }
+                });
+                if (i++ == 2) break;
+            }
+            producer.flush();
 
         } finally {
             producer.close();
