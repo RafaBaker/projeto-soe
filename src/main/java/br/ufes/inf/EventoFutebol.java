@@ -2,6 +2,7 @@ package br.ufes.inf;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.time.Duration;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -102,12 +103,29 @@ public class EventoFutebol {
         this.to = to;
     }
 
+    public String retornaTempoRegulamentar() {
+        if (this.getEnd().getTime() == null) return "[00:00]";
+
+        int totalSegundos = this.getEnd().getTime().intValue();
+        int minutos = totalSegundos / 60;
+        int segundos = totalSegundos % 60;
+        return String.format("[%02d:%02d]", minutos, segundos);
+
+    }
+
     public void imprimeEvento() {
         switch (this.getType().getName()) {
             case "PASS":
-                System.out.printf("[%.2f] Jogador %s tocou a bola para %s\n", this.getEnd().getTime() + (this.getPeriod()*45), this.getFrom().getName(), this.getTo().getName());
+                System.out.printf("%s Jogador %s tocou a bola para %s\n", this.retornaTempoRegulamentar(),this.getFrom().getName(), this.getTo().getName());
+
         }
     }
+
+//    public void imprimirPlacarNaMesmaLinha() {
+//        // O \r no final (ou início) faz ele voltar pro começo da linha.
+//        // Assim que a variável muda, ele sobrescreve a própria linha!
+//        System.out.print("\r⚽ PLACAR: " + nomeTimeA + " " + golsTimeA + " x " + golsTimeB + " " + nomeTimeB);
+//    }
 
     @Override
     public String toString() {

@@ -41,7 +41,9 @@ public class Producer {
             for (EventoFutebol evento : eventos) {
 
                 System.out.println("Criando evento");
-                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getFrom().getId(), evento);
+//                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getFrom().getId(), evento); // Chave como jogador
+                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getType().getName(), evento); // Chave como tipo de dado
+
 
                 producer.send(record, (metadata, exception) -> {
                     if (exception == null) {
