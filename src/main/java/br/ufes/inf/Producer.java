@@ -18,7 +18,7 @@ import java.util.Properties;
 public class Producer {
     public static void main(String[] args) throws Exception {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, EventoFutebolSerializer.class.getName());
 
@@ -37,9 +37,10 @@ public class Producer {
 
             List<EventoFutebol> eventos = mapper.convertValue(dataNode, new TypeReference<List<EventoFutebol>>() {});
 
-            int i = 0;
+//            int i = 0;
             for (EventoFutebol evento : eventos) {
 
+                System.out.println("Criando evento");
                 ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getFrom().getId(), evento);
 
                 producer.send(record, (metadata, exception) -> {
@@ -48,14 +49,18 @@ public class Producer {
                                             "| partition=" + metadata.partition() +
                                             "| offset=" + metadata.offset());
                     } else {
-                        exception.printStackTrace();
+                        System.out.println("Algum erro aconteceu" + exception.getMessage());;
                     }
                 });
-                if (i++ == 2) break;
-            }
-            producer.flush();
 
-        } finally {
+                Thread.sleep(100);
+            }
+//            producer.flush();
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        finally {
             producer.close();
             System.out.println("produtor encerrado");
         }
