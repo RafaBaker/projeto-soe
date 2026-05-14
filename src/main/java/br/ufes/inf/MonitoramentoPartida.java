@@ -8,18 +8,24 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
  * Classe responsável pelo monitoramento em tempo real dos eventos da partida.
- * Implementa 3 situações de interesse, 2 com eventos primitivos e 1 com evento derivado.
  */
 public class MonitoramentoPartida {
+
+    static class EstadoTatico {
+        int acoesSequenciais = 0;
+        long janelaTempoInicio = System.currentTimeMillis();
+        String timeEmPosse = "";
+    }
 
     public static void main(String[] args) {
 
         Properties consumerProps = new Properties();
-        // Conexão com os 3 brokers com Docker
         consumerProps.put("bootstrap.servers", "localhost:19092,localhost:29092,localhost:39092");
         consumerProps.put("group.id", "grupo-monitoramento-estatistico");
         consumerProps.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -29,7 +35,6 @@ public class MonitoramentoPartida {
         KafkaConsumer<String, EventoFutebol> consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Collections.singletonList("match-events-raw"));
 
-        // Configuração do Producer
         Properties producerProps = new Properties();
         producerProps.put("bootstrap.servers", "localhost:19092,localhost:29092,localhost:39092");
         producerProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
@@ -37,10 +42,7 @@ public class MonitoramentoPartida {
 
         KafkaProducer<String, String> producer = new KafkaProducer<>(producerProps);
 
-        int acoesSequenciais = 0;
-        long janelaTempoInicio = System.currentTimeMillis();
-        String timeEmPosse = "";
-        int ladoPressao = 0;
+        Map<String, EstadoTatico> estadoPorPartida = new HashMap<>();
 
         System.out.println("--- MONITOR DE EVENTOS INICIADO ---");
 
@@ -52,33 +54,32 @@ public class MonitoramentoPartida {
                     EventoFutebol evento = record.value();
                     if (evento == null || evento.getType() == null) continue;
 
+                    String matchId = record.key() != null ? record.key() : "Partida_Desconhecida";
+
+                    estadoPorPartida.putIfAbsent(matchId, new EstadoTatico());
+
+                    EstadoTatico estadoAtual = estadoPorPartida.get(matchId);
+
                     String tipo = evento.getType().getName();
                     String time = (evento.getTeam() != null) ? evento.getTeam().getName() : "Desconhecido";
 
-                    // Situação de interesse 1: Falta Perigosa
                     if ("FAULT RECEIVED".equals(tipo)) {
                         Location loc = evento.getStart();
                         if (loc != null && loc.getX() != null) {
-                            // Áreas ficam abaixo de 0.25 ou acima de 0.75
                             if (loc.getX() <= 0.25 || loc.getX() >= 0.75) {
-                                System.out.printf("[ALERTA] Falta Perigosa para o %s em X: %.2f%n", time, loc.getX());
+                                System.out.printf("[ALERTA | %s] Falta Perigosa para '%s' em X: %.2f%n", matchId, time, loc.getX());
                             }
                         }
                     }
 
-                    // Situação de interesse 2: Finalização
                     if ("SHOT".equals(tipo)) {
-                        System.out.println("[ALERTA] Finalização detectada! Risco de gol para o " + time);
+                        System.out.printf("[ALERTA | %s] Finalização detectada! Risco de gol para '%s'%n", matchId, time);
                     }
 
-                    // Situação de interesse 3: Ação disciplinar (CARD)
                     if ("CARD".equals(tipo)) {
-                        System.out.println("[AVISO] Cartão aplicado na partida!");
+                        System.out.printf("[AVISO | %s] Cartão aplicado na partida!%n", matchId);
                     }
 
-                    // Situação de interesse complexa ---
-                    // Se o mesmo time realiza 8 ações (passes, chutes ou conduções) no campo adversário
-                    // num intervalo de processamento curto, inferimos como "Pressão ofensiva".
                     if ("PASS".equals(tipo) || "SHOT".equals(tipo) || "CARRY".equals(tipo)) {
                         Location loc = evento.getStart();
 
@@ -87,7 +88,6 @@ public class MonitoramentoPartida {
                             int periodo = evento.getPeriod();
 
                             boolean isMandante = "Team A".equals(time);
-
                             boolean isZonaDeAtaque = false;
 
                             if (isMandante) {
@@ -101,25 +101,25 @@ public class MonitoramentoPartida {
                             if (isZonaDeAtaque) {
                                 long tempoAtual = System.currentTimeMillis();
 
-                                if (!time.equals(timeEmPosse) || (tempoAtual - janelaTempoInicio) > 10000) {
-                                    acoesSequenciais = 1;
-                                    timeEmPosse = time;
-                                    janelaTempoInicio = tempoAtual;
+                                if (!time.equals(estadoAtual.timeEmPosse) || (tempoAtual - estadoAtual.janelaTempoInicio) > 10000) {
+                                    estadoAtual.acoesSequenciais = 1;
+                                    estadoAtual.timeEmPosse = time;
+                                    estadoAtual.janelaTempoInicio = tempoAtual;
                                 } else {
-                                    acoesSequenciais++;
+                                    estadoAtual.acoesSequenciais++;
                                 }
 
-                                if (acoesSequenciais >= 8) {
-                                    System.out.println("--- INFERÊNCIA: Pressão ofensiva do time " + time + " no campo de ataque! ---");
+                                if (estadoAtual.acoesSequenciais >= 8) {
+                                    System.out.println("--- INFERÊNCIA [" + matchId + "]: Pressão de '" + time + "' no campo de ataque! ---");
 
                                     String jsonDerivado = String.format(
-                                            "{\"insight\": \"High Offensive Pressure\", \"team\": \"%s\", \"period\": %d, \"timestamp\": %d}",
-                                            time, periodo, tempoAtual
+                                            "{\"match_id\": \"%s\", \"insight\": \"High Offensive Pressure\", \"team\": \"%s\", \"period\": %d, \"timestamp\": %d}",
+                                            matchId, time, periodo, tempoAtual
                                     );
 
-                                    producer.send(new ProducerRecord<>("match-insight", time, jsonDerivado));
+                                    producer.send(new ProducerRecord<>("match-insight", matchId, jsonDerivado));
 
-                                    acoesSequenciais = 0;
+                                    estadoAtual.acoesSequenciais = 0;
                                 }
                             }
                         }

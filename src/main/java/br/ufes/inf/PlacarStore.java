@@ -24,7 +24,7 @@ public class PlacarStore {
 
     public void imprimirPlacar() {
 //        System.out.println("=====================================");
-        System.out.print("\rPLACAR: " + teamA + " " + goalsA + " x " + goalsB + " " + teamB);
+        System.out.print("PLACAR: " + teamA + " " + goalsA + " x " + goalsB + " " + teamB + "\n");
 //        System.out.println("=====================================");
     }
 
