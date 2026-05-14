@@ -40,9 +40,9 @@ public class Producer {
 //            int i = 0;
             for (EventoFutebol evento : eventos) {
 
-                System.out.println("Criando evento");
-//                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getFrom().getId(), evento); // Chave como jogador
-                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getType().getName(), evento); // Chave como tipo de dado
+//                System.out.println("Criando evento");
+                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getFrom().getId(), evento); // Chave como jogador
+//                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getType().getName(), evento); // Chave como tipo de dado
 
 
                 producer.send(record, (metadata, exception) -> {
@@ -55,7 +55,7 @@ public class Producer {
                     }
                 });
 
-                Thread.sleep(100);
+//                Thread.sleep(100);
             }
 //            producer.flush();
 

@@ -14,14 +14,17 @@ import java.util.Properties;
 
 import static java.util.List.*;
 
-public class Consumer {
+public class ConsumerPlacar {
     public static void main(String[] args) throws Exception {
         KafkaConsumer<String, EventoFutebol> consumer = getStringEventoFutebolKafkaConsumer();
 
         String topic = "match-events-raw";
         consumer.subscribe(of(topic));
 
-        List<EventoFutebol> lista = new ArrayList<>();
+//        List<EventoFutebol> lista = new ArrayList<>();
+
+        PlacarStore placar = new PlacarStore("Time A", "Time B");
+        String idTeamA = "FIFATMA";
 
         try {
             while (true) {
@@ -29,9 +32,25 @@ public class Consumer {
 
                 for (ConsumerRecord<String, EventoFutebol> record : records) {
                     EventoFutebol eventoFutebol = record.value();
-                    lista.add(eventoFutebol);
+//                    lista.add(eventoFutebol);
 
-                    eventoFutebol.imprimeEvento();
+
+                    boolean goal = false;
+
+                    if (eventoFutebol.getType().getName().equals("SHOT")) {
+                        for (Item subtype : eventoFutebol.getSubtypes()) {
+                            if (subtype.getName().equals("GOAL")) {
+                                goal = true;
+                            }
+                        }
+                    }
+
+                    if (goal) {
+                        String scorerTeam = eventoFutebol.getTeam().getId();
+//                        System.out.println("GOOOOOOOOOOOOOOOOL!");
+
+                        placar.registrarGol(scorerTeam, idTeamA);
+                    }
 
 //                    System.out.println("Received: " + eventoFutebol +
 //                            " | partition= " + record.partition() +
@@ -47,7 +66,7 @@ public class Consumer {
     private static KafkaConsumer<String, EventoFutebol> getStringEventoFutebolKafkaConsumer() {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "match-group");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "placar-group");
 
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, EventoFutebolDeserializer.class.getName());
