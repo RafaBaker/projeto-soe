@@ -13,12 +13,10 @@ import java.io.File;
 import java.util.List;
 import java.util.Properties;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Producer {
     public static void main(String[] args) throws Exception {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, EventoFutebolSerializer.class.getName());
 
@@ -32,37 +30,32 @@ public class Producer {
             System.out.println("Lendo o json...");
 
             JsonNode rootNode = mapper.readTree(new File("Sample_Game_3_events.json"));
-
             JsonNode dataNode = rootNode.get("data");
 
             List<EventoFutebol> eventos = mapper.convertValue(dataNode, new TypeReference<List<EventoFutebol>>() {});
 
-//            int i = 0;
+            String matchId = "Game_3";
+
             for (EventoFutebol evento : eventos) {
 
-//                System.out.println("Criando evento");
-                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getFrom().getId(), evento); // Chave como jogador
-//                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, evento.getType().getName(), evento); // Chave como tipo de dado
-
+                ProducerRecord<String, EventoFutebol> record = new ProducerRecord<>(topic, matchId, evento);
 
                 producer.send(record, (metadata, exception) -> {
                     if (exception == null) {
                         System.out.println("Enviando EventoFutebol..." +  evento +
-                                            "| partition=" + metadata.partition() +
-                                            "| offset=" + metadata.offset());
+                                "| partition=" + metadata.partition() +
+                                "| offset=" + metadata.offset());
                     } else {
-                        System.out.println("Algum erro aconteceu" + exception.getMessage());;
+                        System.out.println("Algum erro aconteceu: " + exception.getMessage());
                     }
                 });
 
-//                Thread.sleep(100);
+                  Thread.sleep(23);
             }
-//            producer.flush();
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-        finally {
+            System.out.println("Erro na execução: " + e.getMessage());
+        } finally {
             producer.close();
             System.out.println("produtor encerrado");
         }

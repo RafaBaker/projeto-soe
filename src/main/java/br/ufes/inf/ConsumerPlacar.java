@@ -7,72 +7,59 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import static java.util.List.*;
 
 public class ConsumerPlacar {
     public static void main(String[] args) throws Exception {
-        KafkaConsumer<String, EventoFutebol> consumer = getStringEventoFutebolKafkaConsumer();
+        KafkaConsumer<String, EventoFutebol> consumer = KafkaCreate.createConsumer("placar-group");
 
         String topic = "match-events-raw";
-        consumer.subscribe(of(topic));
+        consumer.subscribe(Collections.singletonList(topic));
 
-//        List<EventoFutebol> lista = new ArrayList<>();
-
-        PlacarStore placar = new PlacarStore("Time A", "Time B");
+        Map<String, PlacarStore> placaresAtivos = new HashMap<>();
         String idTeamA = "FIFATMA";
 
         try {
             while (true) {
-                ConsumerRecords<String, EventoFutebol> records = consumer.poll(Duration.ofMillis(1000));
+                ConsumerRecords<String, EventoFutebol> records = consumer.poll(Duration.ofMillis(100));
 
                 for (ConsumerRecord<String, EventoFutebol> record : records) {
                     EventoFutebol eventoFutebol = record.value();
-//                    lista.add(eventoFutebol);
 
+                    if (eventoFutebol == null || eventoFutebol.getType() == null) continue;
 
-                    boolean goal = false;
+                    String matchId = record.key() != null ? record.key(): "Game_Unknown";
 
-                    if (eventoFutebol.getType().getName().equals("SHOT")) {
+                    placaresAtivos.putIfAbsent(matchId, new PlacarStore("Team A", "Team B"));
+
+                    PlacarStore placar = placaresAtivos.get(matchId);
+
+                    boolean isGol = false;
+
+                    if ("SHOT".equals(eventoFutebol.getType().getName()) && eventoFutebol.getSubtypes() != null) {
                         for (Item subtype : eventoFutebol.getSubtypes()) {
-                            if (subtype.getName().equals("GOAL")) {
-                                goal = true;
+                            if ("GOAL".equals(subtype.getName())) {
+                                isGol = true;
+                                break;
                             }
                         }
                     }
 
-                    if (goal) {
-                        String scorerTeam = eventoFutebol.getTeam().getId();
-//                        System.out.println("GOOOOOOOOOOOOOOOOL!");
+                    if (isGol) {
+                        String scorerTeam = eventoFutebol.getTeam() != null ? eventoFutebol.getTeam().getId() : "Unknown";
+                        System.out.print("GOOOOOOOOOOOOOOOOL! [" + matchId + " | Tempo: " + eventoFutebol.retornaTempoRegulamentar() + "] -- ");
 
                         placar.registrarGol(scorerTeam, idTeamA);
                     }
-
-//                    System.out.println("Received: " + eventoFutebol +
-//                            " | partition= " + record.partition() +
-//                            " | offset= " + record.offset());
                 }
 
             }
+        } catch (Exception e) {
+            System.err.println("ERRO (ConsumerPlacar): " + e.getMessage());
         } finally {
             consumer.close();
         }
-    }
-
-    private static KafkaConsumer<String, EventoFutebol> getStringEventoFutebolKafkaConsumer() {
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "placar-group");
-
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, EventoFutebolDeserializer.class.getName());
-
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        return new KafkaConsumer<>(props);
     }
 }
