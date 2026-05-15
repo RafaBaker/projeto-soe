@@ -30,7 +30,7 @@ public class ConsumerCartao {
                         String matchId = record.key() != null ? record.key() : "Unknown_Game";
                         String time = (evento.getTeam() != null ? evento.getTeam().getName() : "Unknown");
 
-                        System.out.printf("[AVISO | %s] Cartão aplicado para '%s'!%n", matchId, time);
+                        System.out.printf("[AVISO | %s | Tempo: %s] Cartão aplicado para '%s'!%n", matchId, evento.retornaTempoRegulamentar(), time);
                     }
                 }
             }

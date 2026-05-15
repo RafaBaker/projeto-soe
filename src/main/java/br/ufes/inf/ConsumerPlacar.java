@@ -49,7 +49,7 @@ public class ConsumerPlacar {
 
                     if (isGol) {
                         String scorerTeam = eventoFutebol.getTeam() != null ? eventoFutebol.getTeam().getId() : "Unknown";
-                        System.out.print("GOOOOOOOOOOOOOOOOL! [" + matchId + "] -- ");
+                        System.out.print("GOOOOOOOOOOOOOOOOL! [" + matchId + " | Tempo: " + eventoFutebol.retornaTempoRegulamentar() + "] -- ");
 
                         placar.registrarGol(scorerTeam, idTeamA);
                     }

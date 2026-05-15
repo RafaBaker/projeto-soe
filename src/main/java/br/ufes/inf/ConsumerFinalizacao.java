@@ -30,7 +30,7 @@ public class ConsumerFinalizacao {
                         String matchId = record.key() != null ? record.key() : "Unknown_Game";
                         String time = (evento.getTeam() != null) ? evento.getTeam().getName() : "Unknown";
 
-                        System.out.printf("[ALERTA | %s] Finalização do time '%s'!%n", matchId, time);
+                        System.out.printf("[ALERTA | %s | Tempo: %s] Finalização do time '%s'!%n", matchId, evento.retornaTempoRegulamentar(), time);
                     }
                 }
             }
