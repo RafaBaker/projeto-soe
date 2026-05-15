@@ -4,13 +4,15 @@ public class EventoTatico {
     private String matchId;
     private String team;
     private String insight;
+    private String tempoRegulamentar;
 
-    public EventoTatico() {} // Necessário para o Jackson
+    public EventoTatico() {}
 
-    public EventoTatico(String matchId, String team, String insight) {
+    public EventoTatico(String matchId, String team, String insight, String tempoRegulamentar) {
         this.matchId = matchId;
         this.team = team;
         this.insight = insight;
+        this.tempoRegulamentar = tempoRegulamentar;
     }
 
     public String getMatchId() { return matchId; }
@@ -24,4 +26,8 @@ public class EventoTatico {
     public String getInsight() { return insight; }
 
     public void setInsight(String insight) { this.insight = insight; }
+
+    public String getTempoRegulamentar() { return tempoRegulamentar; }
+
+    public void setTempoRegulamentar(String tempoRegulamentar) { this.tempoRegulamentar = tempoRegulamentar; }
 }

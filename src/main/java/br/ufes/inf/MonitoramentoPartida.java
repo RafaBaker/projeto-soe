@@ -78,9 +78,11 @@ public class MonitoramentoPartida {
                         } else {
                             estadoAtual.acoesSequenciais++;
                         }
-
                         if (estadoAtual.acoesSequenciais >= 10) {
-                            EventoTatico eventoTatico = new EventoTatico(matchId, time, "Pressão ofensiva alta");
+                            String tempo = evento.retornaTempoRegulamentar();
+
+                            EventoTatico eventoTatico = new EventoTatico(matchId, time, "Pressão ofensiva alta", tempo);
+
                             producer.send(new ProducerRecord<>("match-insight", matchId, eventoTatico));
                             estadoAtual.acoesSequenciais = 0;
                         }

@@ -26,12 +26,14 @@ public class ConsumerPressao {
         try {
             while (true) {
                 ConsumerRecords<String, EventoTatico> records = consumer.poll(Duration.ofMillis(100));
-
                 for (ConsumerRecord<String, EventoTatico> record : records) {
-                    EventoTatico evento = record.value();
-                    if (evento != null) {
-                        System.out.printf("[INSIGHT | %s ] %s detectada da equipe '%s'!%n",
-                                evento.getMatchId(), evento.getInsight(), evento.getTeam());
+                    EventoTatico alerta = record.value();
+                    if (alerta != null) {
+                        System.out.printf("[INSIGHT | %s | Tempo: %s] %s detectada da equipe: %s!%n",
+                                alerta.getMatchId(),
+                                alerta.getTempoRegulamentar(),
+                                alerta.getInsight(),
+                                alerta.getTeam());
                     }
                 }
             }
