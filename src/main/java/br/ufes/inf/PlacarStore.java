@@ -24,11 +24,10 @@ public class PlacarStore {
 
     public void imprimirPlacar() {
 //        System.out.println("=====================================");
-        System.out.print("PLACAR: " + teamA + " " + goalsA + " x " + goalsB + " " + teamB + "\n");
+        System.out.println("PLACAR: " + teamA + " " + goalsA + " x " + goalsB + " " + teamB + "\n");
 //        System.out.println("=====================================");
     }
 
-    // Getters para caso você queira gerar um evento derivado do placar...
     public int getGolsTimeA() { return goalsA; }
     public int getGolsTimeB() { return goalsB; }
 }
