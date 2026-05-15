@@ -22,6 +22,8 @@ O sistema segue uma topologia de streaming em múltiplos estágios:
 2. **MonitoramentoPartida (Stream Processor):** Atua como um *Consumer-Producer*. Consome os dados brutos, aplica lógica tática com estado e produz alertas para o tópico `match-insight`.
 3. **Consumidores:** Microsserviços independentes que reagem aos eventos processados (Placar, Cartões, Finalizações e Insights de Pressão).
 
+# Diagrama de Domínio
+![Diagrama de Domínio](./assets/diagrama-dominio.png)
 
 # Guia de Execução
 ## 1. Subir a Infraestrutura (Docker)
@@ -35,7 +37,6 @@ Verificar se os containers estão ativos
 ```bash
 docker compose ps
 ```
-
 ## 2. Configurar os Tópicos
 
 Cria tópicos match-events-raw e match-insight
