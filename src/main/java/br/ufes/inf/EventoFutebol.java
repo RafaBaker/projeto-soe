@@ -127,11 +127,13 @@ public class EventoFutebol {
 //        System.out.print("\r⚽ PLACAR: " + nomeTimeA + " " + golsTimeA + " x " + golsTimeB + " " + nomeTimeB);
 //    }
 
+
     @Override
     public String toString() {
         return "EventoFutebol{" +
                 "index=" + index +
                 ", team=" + team +
+                ", type=" + type +
                 ", subtypes=" + subtypes +
                 ", start=" + start +
                 ", end=" + end +
