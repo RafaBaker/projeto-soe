@@ -1,14 +1,12 @@
 package br.ufes.inf;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.Properties;
+import java.util.stream.StreamSupport;
 
 public class ConsumerCartao {
     public static void main(String[] args) {
@@ -21,18 +19,17 @@ public class ConsumerCartao {
             while (true) {
                 ConsumerRecords<String, EventoFutebol> records = consumer.poll(Duration.ofMillis(100));
 
-                for (ConsumerRecord<String, EventoFutebol> record : records) {
-                    EventoFutebol evento = record.value();
+                StreamSupport.stream(records.spliterator(), false)
+                        .filter(record -> record.value() != null && record.value().getType() != null)
+                        .filter(record -> "CARD".equals(record.value().getType().getName()))
+                        .forEach(record -> {
+                            EventoFutebol evento = record.value();
+                            String matchId = record.key() != null ? record.key() : "Unknown_Game";
+                            String time = (evento.getTeam() != null ? evento.getTeam().getName() : "Unknown");
 
-                    if (evento == null || evento.getType() == null) continue;
-
-                    if ("CARD".equals(evento.getType().getName())) {
-                        String matchId = record.key() != null ? record.key() : "Unknown_Game";
-                        String time = (evento.getTeam() != null ? evento.getTeam().getName() : "Unknown");
-
-                        System.out.printf("[AVISO | %s | Tempo: %s] Cartão aplicado para '%s'!%n", matchId, evento.retornaTempoRegulamentar(), time);
-                    }
-                }
+                            System.out.printf("[AVISO | %s | Tempo: %s] Cartão aplicado para '%s'!%n",
+                                    matchId, evento.retornaTempoRegulamentar(), time);
+                        });
             }
         } catch (Exception e) {
             System.err.println("ERRO (ConsumerCartao): " + e.getMessage());
