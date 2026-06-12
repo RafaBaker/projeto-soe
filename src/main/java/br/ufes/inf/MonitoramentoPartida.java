@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.StreamSupport;
 
 public class MonitoramentoPartida {
 
@@ -38,58 +39,55 @@ public class MonitoramentoPartida {
             while (true) {
                 ConsumerRecords<String, EventoFutebol> records = consumer.poll(Duration.ofMillis(100));
 
-                for (ConsumerRecord<String, EventoFutebol> record : records) {
-                    EventoFutebol evento = record.value();
+                StreamSupport.stream(records.spliterator(), false)
+                        .filter(record -> record.value() != null && record.value().getType() != null)
+                        .filter(record -> {
+                            String tipo = record.value().getType().getName();
+                            return "PASS".equals(tipo) || "SHOT".equals(tipo) || "CARRY".equals(tipo);
+                        })
+                        .filter(record -> record.value().getStart() != null && record.value().getStart().getX() != null)
+                        .forEach(record -> {
+                            EventoFutebol eventoFutebol = record.value();
+                            String matchId = record.key() != null ? record.key(): "Game_Unknown";
+                            String time = (eventoFutebol.getTeam() != null) ? eventoFutebol.getTeam().getName(): "Unknown";
 
-                    if (evento == null || evento.getType() == null) continue;
+                            EstadoTatico estadoAtual = estadoPorPartida.computeIfAbsent(matchId, k -> new EstadoTatico());
 
-                    String tipo = evento.getType().getName();
-                    if (!("PASS".equals(tipo) || "SHOT".equals(tipo) || "CARRY".equals(tipo))) continue;
+                            double x = eventoFutebol.getStart().getX();
+                            int periodo = eventoFutebol.getPeriod();
+                            boolean isMandante = "Team A".equals(time);
+                            boolean isZonaDeAtaque = false;
 
-                    Location loc = evento.getStart();
-                    if (loc == null || loc.getX() == null) continue;
+                            if (isMandante) {
+                                if (periodo == 1 && x >= 0.67) isZonaDeAtaque = true;
+                                else if (periodo == 2 && x <= 0.33) isZonaDeAtaque = true;
+                            } else {
+                                if (periodo == 1 && x <= 0.33) isZonaDeAtaque = true;
+                                else if (periodo == 2 && x >= 0.67) isZonaDeAtaque = true;
+                            }
 
-                    String matchId = record.key() != null ? record.key() : "Game_Unknown";
-                    String time = (evento.getTeam() != null) ? evento.getTeam().getName() : "Unknown";
+                            if (isZonaDeAtaque) {
+                                long tempoAtual = System.currentTimeMillis();
 
-                    estadoPorPartida.putIfAbsent(matchId, new EstadoTatico());
-                    EstadoTatico estadoAtual = estadoPorPartida.get(matchId);
+                                if (!time.equals(estadoAtual.timeEmPosse) || (tempoAtual - estadoAtual.janelaTempoInicio) > 10000) {
+                                    estadoAtual.acoesSequenciais = 1;
+                                    estadoAtual.timeEmPosse = time;
+                                    estadoAtual.janelaTempoInicio = tempoAtual;
+                                } else {
+                                    estadoAtual.acoesSequenciais++;
+                                }
+                                if (estadoAtual.acoesSequenciais >= 10) {
+                                    String tempo = eventoFutebol.retornaTempoRegulamentar();
 
-                    double x = loc.getX();
-                    int periodo = evento.getPeriod();
-                    boolean isMandante = "Team A".equals(time);
-                    boolean isZonaDeAtaque = false;
+                                    EventoTatico eventoTatico = new EventoTatico(matchId, time, "Pressão ofensiva alta", tempo);
 
-                    if (isMandante) {
-                        if (periodo == 1 && x >= 0.67) isZonaDeAtaque = true;
-                        else if (periodo == 2 && x <= 0.33) isZonaDeAtaque = true;
-                    } else {
-                        if (periodo == 1 && x <= 0.33) isZonaDeAtaque = true;
-                        else if (periodo == 2 && x >= 0.67) isZonaDeAtaque = true;
-                    }
-
-                    if (isZonaDeAtaque) {
-                        long tempoAtual = System.currentTimeMillis();
-
-                        if (!time.equals(estadoAtual.timeEmPosse) || (tempoAtual - estadoAtual.janelaTempoInicio) > 10000) {
-                            estadoAtual.acoesSequenciais = 1;
-                            estadoAtual.timeEmPosse = time;
-                            estadoAtual.janelaTempoInicio = tempoAtual;
-                        } else {
-                            estadoAtual.acoesSequenciais++;
-                        }
-                        if (estadoAtual.acoesSequenciais >= 10) {
-                            String tempo = evento.retornaTempoRegulamentar();
-
-                            EventoTatico eventoTatico = new EventoTatico(matchId, time, "Pressão ofensiva alta", tempo);
-
-                            producer.send(new ProducerRecord<>("match-insight", matchId, eventoTatico));
-                            estadoAtual.acoesSequenciais = 0;
-                        }
-                    } else {
-                        estadoAtual.acoesSequenciais = 0;
-                    }
-                }
+                                    producer.send(new ProducerRecord<>("match-insight", matchId, eventoTatico));
+                                    estadoAtual.acoesSequenciais = 0;
+                                }
+                            } else {
+                                estadoAtual.acoesSequenciais = 0;
+                            }
+                        });
             }
         } catch (Exception e) {
             e.printStackTrace();

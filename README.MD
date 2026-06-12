@@ -103,5 +103,5 @@ docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server localh
 ```
 Resetar Offsets (sem apagar dados):
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server local
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group placar-group --topic match-events-raw --reset-offsets --to-earliest --execute
 ```
