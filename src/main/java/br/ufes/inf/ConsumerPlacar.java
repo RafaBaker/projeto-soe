@@ -1,18 +1,16 @@
 package br.ufes.inf;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
-import java.util.*;
-
-import static java.util.List.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.StreamSupport;
 
 public class ConsumerPlacar {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         KafkaConsumer<String, EventoFutebol> consumer = KafkaCreate.createConsumer("placar-group");
 
         String topic = "match-events-raw";
@@ -25,36 +23,28 @@ public class ConsumerPlacar {
             while (true) {
                 ConsumerRecords<String, EventoFutebol> records = consumer.poll(Duration.ofMillis(100));
 
-                for (ConsumerRecord<String, EventoFutebol> record : records) {
-                    EventoFutebol eventoFutebol = record.value();
+                StreamSupport.stream(records.spliterator(), false)
+                        .filter(record -> record.value() != null && record.value().getType() != null)
+                        .filter(record -> {
+                            EventoFutebol evento = record.value();
+                            boolean isShot = "SHOT".equals(evento.getType().getName());
+                            boolean hasSubtypes = evento.getSubtypes() != null;
 
-                    if (eventoFutebol == null || eventoFutebol.getType() == null) continue;
+                            return isShot && hasSubtypes && evento.getSubtypes().stream()
+                                    .anyMatch(subtype -> "GOAL".equals(subtype.getName()));
+                        })
+                        .forEach(record -> {
+                            EventoFutebol eventoFutebol = record.value();
+                            String matchId = record.key() != null ? record.key() : "Game_Unknown";
 
-                    String matchId = record.key() != null ? record.key(): "Game_Unknown";
+                            PlacarStore placar = placaresAtivos.computeIfAbsent(matchId,
+                                    k -> new PlacarStore("Team A", "Team B"));
 
-                    placaresAtivos.putIfAbsent(matchId, new PlacarStore("Team A", "Team B"));
+                            String scorerTeam = eventoFutebol.getTeam() != null ? eventoFutebol.getTeam().getId() : "Unknown";
 
-                    PlacarStore placar = placaresAtivos.get(matchId);
-
-                    boolean isGol = false;
-
-                    if ("SHOT".equals(eventoFutebol.getType().getName()) && eventoFutebol.getSubtypes() != null) {
-                        for (Item subtype : eventoFutebol.getSubtypes()) {
-                            if ("GOAL".equals(subtype.getName())) {
-                                isGol = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (isGol) {
-                        String scorerTeam = eventoFutebol.getTeam() != null ? eventoFutebol.getTeam().getId() : "Unknown";
-                        System.out.print("GOOOOOOOOOOOOOOOOL! [" + matchId + " | Tempo: " + eventoFutebol.retornaTempoRegulamentar() + "] -- ");
-
-                        placar.registrarGol(scorerTeam, idTeamA);
-                    }
-                }
-
+                            System.out.print("GOOOOOOOOOOOOOOOOL! [" + matchId + " | Tempo: " + eventoFutebol.retornaTempoRegulamentar() + "] -- ");
+                            placar.registrarGol(scorerTeam, idTeamA);
+                        });
             }
         } catch (Exception e) {
             System.err.println("ERRO (ConsumerPlacar): " + e.getMessage());

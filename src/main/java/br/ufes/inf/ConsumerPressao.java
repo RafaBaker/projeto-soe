@@ -1,7 +1,6 @@
 package br.ufes.inf;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -9,6 +8,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.stream.StreamSupport;
 
 public class ConsumerPressao {
 
@@ -26,16 +26,17 @@ public class ConsumerPressao {
         try {
             while (true) {
                 ConsumerRecords<String, EventoTatico> records = consumer.poll(Duration.ofMillis(100));
-                for (ConsumerRecord<String, EventoTatico> record : records) {
-                    EventoTatico alerta = record.value();
-                    if (alerta != null) {
-                        System.out.printf("[INSIGHT | %s | Tempo: %s] %s detectada da equipe: %s!%n",
-                                alerta.getMatchId(),
-                                alerta.getTempoRegulamentar(),
-                                alerta.getInsight(),
-                                alerta.getTeam());
-                    }
-                }
+
+                StreamSupport.stream(records.spliterator(), false)
+                        .filter(record -> record.value() != null)
+                        .forEach(record -> {
+                            EventoTatico alerta = record.value();
+                            System.out.printf("[INSIGHT | %s | Tempo: %s] %s detectada da equipe: %s!%n",
+                                    alerta.getMatchId(),
+                                    alerta.getTempoRegulamentar(),
+                                    alerta.getInsight(),
+                                    alerta.getTeam());
+                        });
             }
         } catch (Exception e) {
             e.printStackTrace();
