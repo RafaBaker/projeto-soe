@@ -2,10 +2,12 @@ package br.ufes.inf;
 
 //
 public class PlacarStore {
-    private String teamA;
-    private String teamB;
-    private int goalsA = 0;
-    private int goalsB = 0;
+    public String teamA;
+    public String teamB;
+    public int goalsA = 0;
+    public int goalsB = 0;
+
+    public PlacarStore() {}
 
     public PlacarStore(String teamA, String teamB) {
         this.teamA = teamA;

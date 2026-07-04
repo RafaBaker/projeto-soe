@@ -1,47 +1,55 @@
 package br.ufes.inf;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.KStream;
 
-import java.time.Duration;
-import java.util.Collections;
 import java.util.Properties;
-import java.util.stream.StreamSupport;
+import java.util.concurrent.CountDownLatch;
 
 public class ConsumerPressao {
 
     public static void main(String[] args) {
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "pression-group");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, EventoTaticoDeserializer.class.getName());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "pression-streams-app");
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
+        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 
-        KafkaConsumer<String, EventoTatico> consumer = new KafkaConsumer<>(props);
-        consumer.subscribe(Collections.singletonList("match-insight"));
+        Serde<EventoTatico> taticoSerde = Serdes.serdeFrom(new EventoTaticoSerializer(), new EventoTaticoDeserializer());
 
-        try {
-            while (true) {
-                ConsumerRecords<String, EventoTatico> records = consumer.poll(Duration.ofMillis(100));
+        StreamsBuilder builder = new StreamsBuilder();
+        
+        KStream<String, EventoTatico> stream = builder.stream("match-insight", 
+            Consumed.with(Serdes.String(), taticoSerde));
 
-                StreamSupport.stream(records.spliterator(), false)
-                        .filter(record -> record.value() != null)
-                        .forEach(record -> {
-                            EventoTatico alerta = record.value();
-                            System.out.printf("[INSIGHT | %s | Tempo: %s] %s detectada da equipe: %s!%n",
+        stream.filter((key, alerta) -> alerta != null)
+              .peek((key, alerta) -> {
+                  System.out.printf("[INSIGHT | %s | Tempo: %s] %s detectada da equipe: %s!%n",
                                     alerta.getMatchId(),
                                     alerta.getTempoRegulamentar(),
                                     alerta.getInsight(),
                                     alerta.getTeam());
-                        });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            consumer.close();
+              });
+
+        Topology topology = builder.build();
+        KafkaStreams streams = new KafkaStreams(topology, props);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            streams.close();
+            latch.countDown();
+        }));
+
+        try {
+            streams.start();
+            latch.await();
+        } catch (InterruptedException e) {
+            System.exit(1);
         }
     }
 }
