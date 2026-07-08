@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOE Tactical Dashboard ⚽</title>
+    <link rel="stylesheet" href="style.css?v=4">
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="pitch-background">
+        <div class="pitch-line center-line"></div>
+        <div class="pitch-line center-circle"></div>
+        <div class="pitch-line penalty-area left"></div>
+        <div class="pitch-line penalty-area right"></div>
+    </div>
+
+    <div class="dashboard-container">
+        <header>
+            <div class="logo-area">
+                <h1>SOE <span>MISTER</span> ⚽</h1>
+                <div class="live-indicator">
+                    <span class="dot"></span> ON AIR
+                </div>
+            </div>
+            <p>Análise Tática em Tempo Real via Kafka Streams</p>
+        </header>
+
+        <main>
+            <div class="insights-panel">
+                <h2>Lances e Acontecimentos</h2>
+                <div id="insights-container" class="insights-container">
+                    <div class="insight-card empty-state">
+                        <p>Aguardando o apito inicial...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-panel">
+                <div class="stat-box scoreboard-box">
+                    <h3>PLACAR EM TEMPO REAL</h3>
+                    <div class="score-display-vertical" style="display: flex; flex-direction: column; gap: 10px; font-size: 2rem; font-weight: 700; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.4); margin-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(79, 172, 254, 0.2); padding: 5px 15px; border-radius: 8px;">
+                            <span class="team-name" style="color: #4facfe;">Team A</span>
+                            <span id="score-teamA" class="team-score">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 8, 68, 0.2); padding: 5px 15px; border-radius: 8px;">
+                            <span class="team-name" style="color: #ff0844;">Team B</span>
+                            <span id="score-teamB" class="team-score">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <h3>Eventos Detectados</h3>
+                    <div id="insight-count" class="stat-value">0</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Conexão VAR</h3>
+                    <div id="connection-status" class="stat-value text-green">Online</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js?v=4"></script>
+</body>
+</html>

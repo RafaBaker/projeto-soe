@@ -88,10 +88,10 @@ public class MonitoramentoPartida {
                 })
                 .groupByKey(Grouped.with(Serdes.String(), eventoSerde))
                 
-                // Conforme o slide da Profa: SlidingWindows.ofTimeDifferenceAndGrace
+                // Sliding Window
                 .windowedBy(SlidingWindows.ofTimeDifferenceAndGrace(Duration.ofSeconds(10), Duration.ofSeconds(2)))
                 
-                // Conforme o slide de Exemplos de Aggregate com window:
+                // Agreggate com window
                 .aggregate(
                         () -> new AgregadorPressao(), // Inicializador
                         (aggKey, newValue, aggValue) -> { // Agregador

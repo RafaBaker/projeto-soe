@@ -82,15 +82,15 @@ Descrever estado de um grupo específico:
 
 - Placar:
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group placar-group
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group placar-streams-app
 ```
 - Finalizações:
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group shots-group
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group shots-streams-app
 ```
 - Cartões:
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group cards-group
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group cards-streams-app
 ```
 
 ## Reset de Ambiente
@@ -103,5 +103,10 @@ docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server localh
 ```
 Resetar Offsets (sem apagar dados):
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group placar-group --topic match-events-raw --reset-offsets --to-earliest --execute
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group placar-streams-app --topic match-events-raw --reset-offsets --to-earliest --execute
+```
+
+Limpar estado local do Kafka Streams (necessário após apagar tópicos em operações Stateful):
+```bash
+rm -rf /tmp/kafka-streams/
 ```
