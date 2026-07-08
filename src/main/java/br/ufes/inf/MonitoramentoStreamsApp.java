@@ -2,11 +2,8 @@ package br.ufes.inf;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.KeyValue;
 
 import java.time.Duration;
 import java.util.Properties;
@@ -174,7 +171,13 @@ public class MonitoramentoStreamsApp {
                 })
                 .to("match-insight", Produced.with(Serdes.String(), eventoTaticoSerde));
 
-        KafkaStreams streams = new KafkaStreams(builder.build(), props);
+        Topology topology = builder.build();
+        System.out.println("===============================================");
+        System.out.println("DESCRIÇÃO DA TOPOLOGIA DO KAFKA STREAMS:");
+        System.out.println(topology.describe());
+        System.out.println("===============================================");
+
+        KafkaStreams streams = new KafkaStreams(topology, props);
         streams.setUncaughtExceptionHandler(e -> {
             System.err.println("CRITICAL STREAM ERROR:");
             e.printStackTrace();

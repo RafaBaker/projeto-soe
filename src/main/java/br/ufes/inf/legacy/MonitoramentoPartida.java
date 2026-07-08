@@ -1,4 +1,6 @@
-package br.ufes.inf;
+package br.ufes.inf.legacy;
+
+import br.ufes.inf.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

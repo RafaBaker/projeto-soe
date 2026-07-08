@@ -1,4 +1,6 @@
-package br.ufes.inf;
+package br.ufes.inf.legacy;
+
+import br.ufes.inf.*;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
