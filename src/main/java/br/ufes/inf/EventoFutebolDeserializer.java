@@ -10,7 +10,8 @@ import java.util.Map;
 
 public class EventoFutebolDeserializer implements Deserializer<EventoFutebol> {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .configure(com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 
     @Override
     public EventoFutebol deserialize(String topic, byte[] data) {
