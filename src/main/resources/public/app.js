@@ -118,4 +118,87 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     connect();
+
+    // HEATMAP LOGIC
+    const hmWsUrl = `${protocol}//${window.location.host}/heatmap-ws`;
+    const playersData = {}; // playerId -> stats
+
+    const teamAPlayersList = document.getElementById('teamA-players');
+    const teamBPlayersList = document.getElementById('teamB-players');
+    const pitchContainer = document.getElementById('pitch-container');
+    const selectedPlayerName = document.getElementById('selected-player-name');
+
+    if(pitchContainer) {
+        for(let i=0; i<100; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell';
+            cell.id = `cell-${i}`;
+            pitchContainer.appendChild(cell);
+        }
+    }
+
+    let activePlayerId = null;
+
+    let hmWs;
+    function connectHeatmap() {
+        hmWs = new WebSocket(hmWsUrl);
+        hmWs.onmessage = (event) => {
+            try {
+                const stats = JSON.parse(event.data);
+                if(!playersData[stats.playerId]) {
+                    const li = document.createElement('li');
+                    li.textContent = stats.playerName || stats.playerId;
+                    li.onclick = () => renderHeatmap(stats.playerId);
+                    li.id = `li-player-${stats.playerId}`;
+                    
+                    if(stats.teamName && stats.teamName.includes('Team A')) {
+                        teamAPlayersList.appendChild(li);
+                    } else {
+                        teamBPlayersList.appendChild(li);
+                    }
+                }
+                playersData[stats.playerId] = stats;
+                
+                if (activePlayerId === stats.playerId) {
+                    renderHeatmap(activePlayerId);
+                }
+            } catch(e) {}
+        };
+        hmWs.onclose = () => setTimeout(connectHeatmap, 3000);
+    }
+
+    function renderHeatmap(playerId) {
+        activePlayerId = playerId;
+        const stats = playersData[playerId];
+        if(!stats) return;
+
+        document.querySelectorAll('.team-list li').forEach(li => li.classList.remove('active'));
+        const activeLi = document.getElementById(`li-player-${playerId}`);
+        if(activeLi) activeLi.classList.add('active');
+        
+        selectedPlayerName.textContent = stats.playerName;
+
+        document.querySelectorAll('.heatmap-cell').forEach(cell => cell.style.opacity = 0);
+        
+        if(!stats.heatmapGrid) return;
+        
+        let maxVal = 0;
+        for(let key in stats.heatmapGrid) {
+            if(stats.heatmapGrid[key] > maxVal) maxVal = stats.heatmapGrid[key];
+        }
+
+        for(let key in stats.heatmapGrid) {
+            const parts = key.split(",");
+            const x = parseInt(parts[0]);
+            const y = parseInt(parts[1]); 
+            const cellIndex = y * 10 + x; 
+            const cell = document.getElementById(`cell-${cellIndex}`);
+            if(cell && maxVal > 0) {
+                const intensity = stats.heatmapGrid[key] / maxVal;
+                cell.style.opacity = intensity * 0.9; 
+            }
+        }
+    }
+
+    connectHeatmap();
 });

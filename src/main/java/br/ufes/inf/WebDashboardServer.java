@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WebDashboardServer {
 
     private static final Set<WsContext> clients = ConcurrentHashMap.newKeySet();
+    private static final Set<WsContext> heatmapClients = ConcurrentHashMap.newKeySet();
 
     public static void main(String[] args) {
         Javalin app = Javalin.create(config -> {
@@ -43,7 +44,13 @@ public class WebDashboardServer {
             ws.onError(ctx -> System.out.println("Erro no websocket"));
         });
 
+        app.ws("/heatmap-ws", ws -> {
+            ws.onConnect(ctx -> heatmapClients.add(ctx));
+            ws.onClose(ctx -> heatmapClients.remove(ctx));
+        });
+
         startKafkaConsumer();
+        startHeatmapConsumer();
     }
 
     private static void startKafkaConsumer() {
@@ -74,6 +81,40 @@ public class WebDashboardServer {
                             }
                         }
                         System.out.println("Broadcasted: " + jsonAlert);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                consumer.close();
+            }
+        }).start();
+    }
+
+    private static void startHeatmapConsumer() {
+        new Thread(() -> {
+            Properties props = new Properties();
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
+            props.put(ConsumerConfig.GROUP_ID_CONFIG, "web-heatmap-group-" + System.currentTimeMillis());
+            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest"); 
+
+            KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
+            consumer.subscribe(Collections.singletonList("match-heatmap"));
+
+            try {
+                while (true) {
+                    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+                    for (ConsumerRecord<String, String> record : records) {
+                        String jsonStats = record.value();
+                        if (jsonStats == null) continue;
+                        
+                        for (WsContext ctx : heatmapClients) {
+                            if (ctx.session.isOpen()) {
+                                ctx.send(jsonStats);
+                            }
+                        }
                     }
                 }
             } catch (Exception e) {

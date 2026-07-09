@@ -8,11 +8,14 @@ import org.apache.kafka.streams.kstream.*;
 import java.time.Duration;
 import java.util.Properties;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class MonitoramentoStreamsApp {
 
     public static void main(String[] args) {
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "monitoramento-cep-app-" + System.currentTimeMillis()); 
+        props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 3);
         props.put(StreamsConfig.consumerPrefix(org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), "latest");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
@@ -93,8 +96,10 @@ public class MonitoramentoStreamsApp {
                 .filter((windowedKey, count) -> count != null && count == 12) // Emite EXATAMENTE na 12ª ação para não flodar
                 .map((windowedKey, count) -> {
                     String[] parts = windowedKey.key().split("_");
-                    EventoTatico insight = new EventoTatico(parts[0], parts[1], "Pressão Ofensiva Alta (🔥)", "[Insight]");
-                    return new KeyValue<>(parts[0], insight);
+                    String matchId = parts[0] + "_" + parts[1];
+                    String team = parts.length > 2 ? parts[2] : "Unknown";
+                    EventoTatico insight = new EventoTatico(matchId, team, "Pressão Ofensiva Alta (🔥)", "[Insight]");
+                    return new KeyValue<>(matchId, insight);
                 })
                 .to("match-insight", Produced.with(Serdes.String(), eventoTaticoSerde));
 
@@ -109,8 +114,10 @@ public class MonitoramentoStreamsApp {
                 .filter((windowedKey, count) -> count != null && count == 10) // Emite EXATAMENTE no 10º passe (Tiki-Taka Real)
                 .map((windowedKey, count) -> {
                     String[] parts = windowedKey.key().split("_");
-                    EventoTatico insight = new EventoTatico(parts[0], parts[1], "Tiki-Taka ⚽ (" + count + " passes)", "[Insight]");
-                    return new KeyValue<>(parts[0], insight);
+                    String matchId = parts[0] + "_" + parts[1];
+                    String team = parts.length > 2 ? parts[2] : "Unknown";
+                    EventoTatico insight = new EventoTatico(matchId, team, "Tiki-Taka ⚽ (" + count + " passes)", "[Insight]");
+                    return new KeyValue<>(matchId, insight);
                 })
                 .to("match-insight", Produced.with(Serdes.String(), eventoTaticoSerde));
 
@@ -125,8 +132,10 @@ public class MonitoramentoStreamsApp {
                 .filter((windowedKey, count) -> count != null && count == 25) // Emite EXATAMENTE na 25ª ação contínua
                 .map((windowedKey, count) -> {
                     String[] parts = windowedKey.key().split("_");
-                    EventoTatico insight = new EventoTatico(parts[0], parts[1], "Domínio Territorial 🛡️ (" + count + " ações)", "[Insight]");
-                    return new KeyValue<>(parts[0], insight);
+                    String matchId = parts[0] + "_" + parts[1];
+                    String team = parts.length > 2 ? parts[2] : "Unknown";
+                    EventoTatico insight = new EventoTatico(matchId, team, "Domínio Territorial 🛡️ (" + count + " ações)", "[Insight]");
+                    return new KeyValue<>(matchId, insight);
                 })
                 .to("match-insight", Produced.with(Serdes.String(), eventoTaticoSerde));
 
@@ -162,14 +171,58 @@ public class MonitoramentoStreamsApp {
 
         defesas.join(finalizacoes,
                 joiner,
-                JoinWindows.ofTimeDifferenceWithNoGrace(Duration.ofSeconds(30)),
+                JoinWindows.ofTimeDifferenceAndGrace(Duration.ofSeconds(30), Duration.ZERO)
+                    .after(Duration.ofSeconds(30))
+                    .before(Duration.ZERO),
                 StreamJoined.with(Serdes.String(), eventoFutebolSerde, eventoFutebolSerde))
                 .map((k, v) -> {
                     String[] parts = k.split("_");
-                    v.setMatchId(parts[0]);
-                    return new KeyValue<>(parts[0], v);
+                    String matchId = parts[0] + "_" + parts[1];
+                    v.setMatchId(matchId);
+                    return new KeyValue<>(matchId, v);
                 })
                 .to("match-insight", Produced.with(Serdes.String(), eventoTaticoSerde));
+
+
+        // ==========================================
+        // EVENTOS EM CASCATA: PLAYER STATS & HEATMAP
+        // ==========================================
+        ObjectMapper mapper = new ObjectMapper();
+        Serde<PlayerStats> playerStatsSerde = Serdes.serdeFrom(
+            (topic, data) -> {
+                try { return data == null ? null : mapper.writeValueAsBytes(data); } 
+                catch (Exception e) { throw new RuntimeException(e); }
+            },
+            (topic, data) -> {
+                try { return data == null ? null : mapper.readValue(data, PlayerStats.class); } 
+                catch (Exception e) { throw new RuntimeException(e); }
+            }
+        );
+
+        rawStream
+            // Só interessa quem fez a ação e tem posição XYZ
+            .filter((k, v) -> v.getFrom() != null && v.getStart() != null && v.getStart().getX() != null && v.getStart().getY() != null)
+            // Agrupamos por jogador em vez de time!
+            .selectKey((k, v) -> k + "_" + v.getFrom().getId())
+            .groupByKey(Grouped.with(Serdes.String(), eventoFutebolSerde))
+            .aggregate(
+                () -> new PlayerStats(), // Inicializa as estatísticas zeradas
+                (key, evento, stats) -> {
+                    if (stats.getPlayerId() == null) {
+                        stats.setPlayerId(evento.getFrom().getId());
+                        stats.setPlayerName(evento.getFrom().getName());
+                        stats.setTeamId(evento.getTeam().getId());
+                        stats.setTeamName(evento.getTeam().getName());
+                    }
+                    // Computa a ação na matriz 10x10 do Heatmap local do jogador
+                    stats.addAction(evento.getStart().getX(), evento.getStart().getY());
+                    return stats;
+                },
+                Materialized.with(Serdes.String(), playerStatsSerde)
+            )
+            .toStream() // Ramifica a KTable pronta em um KStream
+            // Joga os dados pesados pro novo tópico, não misturando com o match-insight
+            .to("match-heatmap", Produced.with(Serdes.String(), playerStatsSerde));
 
         Topology topology = builder.build();
         System.out.println("===============================================");

@@ -130,8 +130,8 @@ h1 span {
 
 main {
     display: grid;
-    grid-template-columns: 2.5fr 1fr;
-    gap: 2rem;
+    grid-template-columns: 2fr 3fr 1fr;
+    gap: 1.5rem;
 }
 
 h2, h3 {
@@ -262,4 +262,80 @@ h2, h3 {
     border: 2px dashed rgba(255,255,255,0.2);
     color: #cbd5e1;
     box-shadow: none;
+}
+
+.heatmap-panel {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.heatmap-layout {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.team-list {
+    flex: 1;
+    max-width: 120px;
+}
+.team-list h4 { color: #94a3b8; font-size: 0.9rem; margin-bottom: 10px; text-align: center; }
+.team-list ul { list-style: none; padding: 0; }
+.team-list li {
+    padding: 5px;
+    margin-bottom: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.2s;
+}
+.team-list li:hover, .team-list li.active {
+    background: #10b981;
+    color: #fff;
+}
+
+.pitch-display {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pitch-container {
+    width: 250px;
+    height: 350px;
+    background-image: url('pitch.jpg');
+    background-size: 100% 100%;
+    background-position: center;
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    border: 2px solid #fff;
+    border-radius: 5px;
+    /* Afasta o grid das bordas reais da imagem para encaixar dentro das linhas do campo */
+    padding: 25px 20px;
+    box-sizing: border-box;
+}
+
+.heatmap-cell {
+    width: 100%;
+    height: 100%;
+    background-color: #ef4444;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.selected-player {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #fcd34d;
+    text-align: center;
 }
