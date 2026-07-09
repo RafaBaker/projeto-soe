@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PlayerStats {
+    private String matchId;
     private String playerId;
     private String playerName;
     private String teamId;
@@ -32,6 +33,14 @@ public class PlayerStats {
         
         String key = gridX + "," + gridY;
         heatmapGrid.put(key, heatmapGrid.getOrDefault(key, 0) + 1);
+    }
+
+    public String getMatchId() {
+        return matchId;
+    }
+
+    public void setMatchId(String matchId) {
+        this.matchId = matchId;
     }
 
     public String getPlayerId() {

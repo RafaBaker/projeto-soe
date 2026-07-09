@@ -23,7 +23,16 @@
                     <span class="dot"></span> ON AIR
                 </div>
             </div>
-            <p>Análise Tática em Tempo Real via Kafka Streams</p>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <p>Análise Tática em Tempo Real via Kafka Streams</p>
+                <div class="game-selector">
+                    <label for="game-select">Partida Atual:</label>
+                    <select id="game-select">
+                        <option value="" disabled selected>Aguardando Dados...</option>
+                    </select>
+                </div>
+            </div>
         </header>
 
         <main>

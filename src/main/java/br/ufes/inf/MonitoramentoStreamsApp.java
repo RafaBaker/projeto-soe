@@ -209,6 +209,8 @@ public class MonitoramentoStreamsApp {
                 () -> new PlayerStats(), // Inicializa as estatísticas zeradas
                 (key, evento, stats) -> {
                     if (stats.getPlayerId() == null) {
+                        String[] parts = key.split("_");
+                        stats.setMatchId(parts[0] + "_" + parts[1]);
                         stats.setPlayerId(evento.getFrom().getId());
                         stats.setPlayerName(evento.getFrom().getName());
                         stats.setTeamId(evento.getTeam().getId());
