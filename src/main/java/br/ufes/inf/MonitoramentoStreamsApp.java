@@ -216,8 +216,16 @@ public class MonitoramentoStreamsApp {
                         stats.setTeamId(evento.getTeam().getId());
                         stats.setTeamName(evento.getTeam().getName());
                     }
-                    // Computa a ação na matriz 10x10 do Heatmap local do jogador
-                    stats.addAction(evento.getStart().getX(), evento.getStart().getY());
+                    // Normaliza a direção do campo: no 2º tempo, inverte X e Y para espelhar a posição tática
+                    Double x = evento.getStart().getX();
+                    Double y = evento.getStart().getY();
+                    
+                    if (evento.getPeriod() == 2) {
+                        x = 1.0 - x;
+                        y = 1.0 - y;
+                    }
+                    
+                    stats.addAction(x, y);
                     return stats;
                 },
                 Materialized.with(Serdes.String(), playerStatsSerde)

@@ -44,6 +44,8 @@ Cria tópicos match-events-raw e match-insight
 docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic match-events-raw --partitions 3 --replication-factor 2 --bootstrap-server localhost:9092
 
 docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic match-insight --partitions 1 --replication-factor 2 --bootstrap-server localhost:9092
+
+docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic match-heatmap --partitions 3 --replication-factor 2 --bootstrap-server localhost:9092
 ```
 
 ## 3. Ordem de execução das aplicaçõs Java
