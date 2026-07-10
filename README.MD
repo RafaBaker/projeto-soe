@@ -44,32 +44,31 @@ Cria tópicos match-events-raw e match-insight
 docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic match-events-raw --partitions 3 --replication-factor 2 --bootstrap-server localhost:9092
 
 docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic match-insight --partitions 1 --replication-factor 2 --bootstrap-server localhost:9092
+
+docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic match-heatmap --partitions 3 --replication-factor 2 --bootstrap-server localhost:9092
 ```
 
-## 3. Ordem de execução das aplicaçõs Java
+## 3. Ordem de execução das aplicações Java
 
-Para observar o comportamento do sistema, execute na seguinte ordem:
+Para observar o comportamento do sistema moderno com a interface Web, abra diferentes terminais e execute na seguinte ordem:
 
-1. Inicie todos os Consumidores e o MonitoramentoPartida.
+1. **Inicie o Servidor Web Dashboard** (Terminal 1)
 ```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.ConsumerPlacar"
+mvn exec:java -Dexec.mainClass="br.ufes.inf.WebDashboardServer"
 ```
+*Após iniciar, abra seu navegador em `http://localhost:8080`*
+
+2. **Inicie o Motor CEP Kafka Streams** (Terminal 2)
 ```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.ConsumerFinalizacao"
+mvn exec:java -Dexec.mainClass="br.ufes.inf.MonitoramentoStreamsApp"
 ```
-```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.ConsumerCartao"
-```
-```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.ConsumerPressao"
-```
-```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.MonitoramentoPartida"
-```
-2. Inicie o Producer para disparar o fluxo de dados.
+
+3. **Inicie o Produtor para simular a partida** (Terminal 3)
 ```bash
 mvn exec:java -Dexec.mainClass="br.ufes.inf.Producer"
 ```
+
+*(Nota: Os consumidores legados em modo console continuam disponíveis no pacote `legacy`).*
 
 ## 4. Comandos de Monitorização e Debug
 
@@ -82,15 +81,15 @@ Descrever estado de um grupo específico:
 
 - Placar:
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group placar-group
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group placar-streams-app
 ```
 - Finalizações:
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group shots-group
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group shots-streams-app
 ```
 - Cartões:
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group cards-group
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group cards-streams-app
 ```
 
 ## Reset de Ambiente
@@ -103,5 +102,10 @@ docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server localh
 ```
 Resetar Offsets (sem apagar dados):
 ```bash
-docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server local
+docker exec -it kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group placar-streams-app --topic match-events-raw --reset-offsets --to-earliest --execute
+```
+
+Limpar estado local do Kafka Streams (necessário após apagar tópicos em operações Stateful):
+```bash
+rm -rf /tmp/kafka-streams/
 ```
