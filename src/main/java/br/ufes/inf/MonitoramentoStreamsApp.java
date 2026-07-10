@@ -93,7 +93,7 @@ public class MonitoramentoStreamsApp {
                 .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(45))) // 45s de janela
                 .count()
                 .toStream()
-                .filter((windowedKey, count) -> count != null && count == 12) // Emite EXATAMENTE na 12ª ação para não flodar
+                .filter((windowedKey, count) -> count != null && count == 12)
                 .map((windowedKey, count) -> {
                     String[] parts = windowedKey.key().split("_");
                     String matchId = parts[0] + "_" + parts[1];

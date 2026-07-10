@@ -48,30 +48,27 @@ docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic match-in
 docker exec -it kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic match-heatmap --partitions 3 --replication-factor 2 --bootstrap-server localhost:9092
 ```
 
-## 3. Ordem de execução das aplicaçõs Java
+## 3. Ordem de execução das aplicações Java
 
-Para observar o comportamento do sistema, execute na seguinte ordem:
+Para observar o comportamento do sistema moderno com a interface Web, abra diferentes terminais e execute na seguinte ordem:
 
-1. Inicie todos os Consumidores e o MonitoramentoPartida.
+1. **Inicie o Servidor Web Dashboard** (Terminal 1)
 ```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.ConsumerPlacar"
+mvn exec:java -Dexec.mainClass="br.ufes.inf.WebDashboardServer"
 ```
+*Após iniciar, abra seu navegador em `http://localhost:8080`*
+
+2. **Inicie o Motor CEP Kafka Streams** (Terminal 2)
 ```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.ConsumerFinalizacao"
+mvn exec:java -Dexec.mainClass="br.ufes.inf.MonitoramentoStreamsApp"
 ```
-```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.ConsumerCartao"
-```
-```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.ConsumerPressao"
-```
-```bash
-mvn exec:java -Dexec.mainClass="br.ufes.inf.MonitoramentoPartida"
-```
-2. Inicie o Producer para disparar o fluxo de dados.
+
+3. **Inicie o Produtor para simular a partida** (Terminal 3)
 ```bash
 mvn exec:java -Dexec.mainClass="br.ufes.inf.Producer"
 ```
+
+*(Nota: Os consumidores legados em modo console continuam disponíveis no pacote `legacy`).*
 
 ## 4. Comandos de Monitorização e Debug
 
