@@ -37,7 +37,7 @@ public class MonitoramentoStreamsApp {
 
 
         // ==========================================
-        // NOVOS: EVENTOS SIMPLES (STATELESS)
+        // EVENTOS SIMPLES (STATELESS)
         // ==========================================
 
         // --- GOL (PLACAR) ---
@@ -72,7 +72,7 @@ public class MonitoramentoStreamsApp {
 
 
         // ==========================================
-        // EVENTOS COMPLEXOS CEP (STATEFUL)
+        // EVENTOS COMPLEXOS (STATEFUL)
         // ==========================================
 
         // --- TOPOLOGIA 1: PRESSÃO OFENSIVA ALTA ---
@@ -200,9 +200,9 @@ public class MonitoramentoStreamsApp {
         );
 
         rawStream
-            // Só interessa quem fez a ação e tem posição XYZ
+            // Filtrar apenas ações com posição XYZ e executor
             .filter((k, v) -> v.getFrom() != null && v.getStart() != null && v.getStart().getX() != null && v.getStart().getY() != null)
-            // Agrupamos por jogador em vez de time!
+            // Agrupar por jogador
             .selectKey((k, v) -> k + "_" + v.getFrom().getId())
             .groupByKey(Grouped.with(Serdes.String(), eventoFutebolSerde))
             .aggregate(
@@ -231,7 +231,7 @@ public class MonitoramentoStreamsApp {
                 Materialized.with(Serdes.String(), playerStatsSerde)
             )
             .toStream() // Ramifica a KTable pronta em um KStream
-            // Joga os dados pesados pro novo tópico, não misturando com o match-insight
+            // Envia para o tópico de heatmap
             .to("match-heatmap", Produced.with(Serdes.String(), playerStatsSerde));
 
         Topology topology = builder.build();

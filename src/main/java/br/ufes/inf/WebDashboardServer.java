@@ -27,12 +27,12 @@ public class WebDashboardServer {
         app.ws("/insights", ws -> {
             ws.onConnect(ctx -> {
                 System.out.println("Cliente conectado: " + ctx.sessionId());
-                // Evitar timeout de inatividade do WebSocket aumentando pra 15 minutos
+                // Configurar timeout do WebSocket
                 ctx.session.setIdleTimeout(Duration.ofMinutes(15));
                 clients.add(ctx);
             });
             ws.onMessage(ctx -> {
-                // Se receber um ping de keep-alive, envia um pong e mantém a sessão aberta.
+                // Responder ping para manter sessão ativa
                 if ("ping".equals(ctx.message())) {
                     ctx.send("pong");
                 }
